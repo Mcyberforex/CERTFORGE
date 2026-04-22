@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "Net+ Study",
+    "slug": "netplus-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#06060f"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.netplus.forge"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#06060f"
+      },
+      "package": "com.netplus.forge"
+    },
+    "sdkVersion": "51.0.0",
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    }
+  }
+}
