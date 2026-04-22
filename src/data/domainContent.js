@@ -336,18 +336,270 @@ function makeExpansionLesson(topic, index) {
       },
       {
         type: 'prompt',
-        question: `When working with ${topic.name}, what is the safest first action in a troubleshooting scenario?`,
-        options: [
-          'Gather symptoms and identify scope',
-          'Replace the primary device immediately',
-          'Disable logging to reduce noise',
-          'Skip validation if the first test works',
-        ],
-        correct: 0,
-        explanation: 'A structured approach starts by gathering symptoms and identifying scope before making changes.',
+        ...makeScenarioPrompt(topic, theme),
       },
     ],
   };
+}
+
+function makeScenarioPrompt(topic, theme) {
+  const ctx = topicPromptContext(topic);
+  const article = indefiniteArticle(topic.name);
+  const sentenceArticle = article.charAt(0).toUpperCase() + article.slice(1);
+  const prompts = {
+    'Core Purpose': {
+      question: `A junior technician can define ${topic.name}, but keeps misapplying it during ${ctx.ticket} tickets. What question best checks whether they understand the core purpose?`,
+      options: [
+        `What problem does ${topic.name} solve for ${ctx.affectedUsers}?`,
+        `Which vendor command uses the shortest syntax?`,
+        `Can the issue be closed before testing user impact?`,
+        `Should the newest device be replaced first?`,
+      ],
+      explanation: `Understanding ${topic.name} starts with knowing what problem it solves, then applying that purpose to the scenario.`,
+    },
+    'Design Decisions': {
+      question: `A design using ${topic.name} improves security but adds support complexity. What should the technician evaluate before recommending it?`,
+      options: [
+        `Whether the benefit to ${ctx.securityGoal} justifies the added operational cost`,
+        'Whether documentation can be skipped to save time',
+        'Whether all existing monitoring should be disabled',
+        'Whether unrelated services can share the same failure domain',
+      ],
+      explanation: 'Harder design questions often ask for tradeoffs: security, reliability, performance, manageability, and support cost.',
+    },
+    'Configuration Checks': {
+      question: `After a change involving ${topic.name}, ${ctx.affectedUsers} lose access while others still work. Which check is most useful before rolling back everything?`,
+      options: [
+        `Compare ${ctx.configItem} against the intended configuration`,
+        'Replace the switch, router, firewall, or server immediately',
+        'Assume the users entered credentials incorrectly',
+        'Ignore the failed group because some users still work',
+      ],
+      explanation: 'Partial failure usually points to scope-specific configuration, so compare affected and working paths before broad rollback.',
+    },
+    'Troubleshooting Signals': {
+      question: `${sentenceArticle} ${topic.name} issue affects ${ctx.scope} but not the rest of the environment. Which detail is the strongest troubleshooting signal?`,
+      options: [
+        `The failure follows ${ctx.boundary}`,
+        'The problem happened during business hours',
+        'The newest device has the brightest status LEDs',
+        'The ticket description contains several acronyms',
+      ],
+      explanation: 'Scope is a powerful signal: one subnet, VLAN, SSID, path, or policy failing narrows the likely cause.',
+    },
+    'Operational Best Practices': {
+      question: `A fix for ${topic.name} works during testing. What should happen before the ticket is closed?`,
+      options: [
+        `Validate ${ctx.validationTarget} and record what changed`,
+        'Delete the ticket notes to reduce clutter',
+        'Disable alerts so the issue does not reopen',
+        'Make the same change on unrelated systems',
+      ],
+      explanation: 'Operational best practice includes validation and documentation, not just a successful first test.',
+    },
+    'Exam Vocabulary': {
+      question: `An exam question about ${topic.name} asks for the "least disruptive" next step. What does that wording usually imply?`,
+      options: [
+        `Choose a targeted ${ctx.lowRiskCheck} before broader changes`,
+        'Rebuild the entire network segment',
+        'Power cycle every device in the path',
+        'Ignore change control because the issue is urgent',
+      ],
+      explanation: 'Network+ wording such as least disruptive, best next step, or most likely cause points toward precise, low-risk actions.',
+    },
+    'Planning Requirements': {
+      question: `Before deploying ${topic.name} at a new branch, which missing requirement creates the most risk?`,
+      options: [
+        `${ctx.planningNeed}, dependencies, security boundaries, and growth`,
+        'The preferred color of cable labels only',
+        'A plan to test after users complain',
+        'A decision to avoid documenting dependencies',
+      ],
+      explanation: 'Planning questions expect requirements: users, services, constraints, security, growth, and validation criteria.',
+    },
+    'Layered Thinking': {
+      question: `A ${topic.name} problem may involve cabling, addressing, policy, or applications. What approach best avoids testing the wrong layer?`,
+      options: [
+        `Map ${ctx.symptom} to OSI/TCP-IP layers and test dependencies in order`,
+        'Start with application settings even when link lights are down',
+        'Skip Layer 1 and Layer 2 because they are rarely tested',
+        'Assume encryption settings are always the root cause',
+      ],
+      explanation: 'Layered troubleshooting prevents jumping to a higher-layer fix when a lower-layer dependency is broken.',
+    },
+    'Common Misconfigurations': {
+      question: `A ${topic.name} design is correct on paper, but only one segment fails. Which cause should be considered early?`,
+      options: [
+        `A small mismatch such as ${ctx.misconfigExamples}`,
+        'A complete internet outage for every site',
+        'A need to replace every endpoint NIC',
+        'A problem that cannot be configuration-related',
+      ],
+      explanation: 'Common misconfigurations are often narrow: one VLAN, one mask, one policy, one route, one profile, or one gateway.',
+    },
+    'Verification Steps': {
+      question: `A technician says a ${topic.name} fix is complete because the configuration was saved. What evidence is still needed?`,
+      options: [
+        `A test proving ${ctx.validationTarget} works from the affected location`,
+        'A screenshot of the login page only',
+        'A note saying the change should work',
+        'A count of how many commands were typed',
+      ],
+      explanation: 'Saving configuration is not proof. Verification must test the affected workflow or path.',
+    },
+    'Security Impact': {
+      question: `A ${topic.name} change restores connectivity but also broadens access. What should the technician check next?`,
+      options: [
+        `Whether the change violates least privilege or exposes ${ctx.securityExposure}`,
+        'Whether the outage ticket can be closed because traffic now passes',
+        'Whether logs should be disabled to hide false positives',
+        'Whether all users should receive administrator permissions',
+      ],
+      explanation: 'Connectivity fixes can create security regressions, so least privilege and exposure must be checked.',
+    },
+    'Performance Impact': {
+      question: `Users report ${topic.name} works but feels slow after a change. Which evidence best supports a performance diagnosis?`,
+      options: [
+        `Baseline comparison for ${ctx.performanceMetric}`,
+        'A guess that users are exaggerating',
+        'The fact that the link is technically up',
+        'The number of unused switch ports',
+      ],
+      explanation: 'Performance issues require comparison against baselines and measurable indicators.',
+    },
+    'Documentation Practice': {
+      question: `Which note would be most useful for the next technician supporting ${topic.name}?`,
+      options: [
+        `${ctx.symptom}, scope, tests performed, root cause, change made, and validation result`,
+        'Fixed it',
+        'User was unable to work',
+        'Changed some settings and it seems fine',
+      ],
+      explanation: 'Good documentation lets another technician understand evidence, cause, action, and proof of resolution.',
+    },
+    'Change Control': {
+      question: `A risky ${topic.name} change is approved for tonight. Which item is most important before implementation starts?`,
+      options: [
+        `Rollback steps and validation for ${ctx.validationTarget}`,
+        'A plan to decide rollback after the outage begins',
+        'A promise that the change is simple',
+        'A decision to skip monitoring until tomorrow',
+      ],
+      explanation: 'Change control requires planned rollback and validation before the change is made.',
+    },
+    'Troubleshooting Workflow': {
+      question: `A first theory about ${topic.name} fails during testing. What should the technician do next?`,
+      options: [
+        `Document the result and test the next likely cause for ${ctx.symptom}`,
+        'Keep repeating the failed test until it passes',
+        'Change unrelated settings to increase the odds',
+        'Close the ticket because one theory was wrong',
+      ],
+      explanation: 'A failed theory is useful evidence. The workflow continues with the next likely cause.',
+    },
+    'Tools and Commands': {
+      question: `A ${topic.name} issue could be DNS, path, or reachability. Which tool choice is most defensible?`,
+      options: [
+        `Use ${ctx.toolExamples} based on what the symptom suggests`,
+        'Use only one tool for every possible network issue',
+        'Avoid command output because it may be confusing',
+        'Start by replacing hardware before collecting evidence',
+      ],
+      explanation: 'Tool selection should match the theory being tested, not be random or one-size-fits-all.',
+    },
+    'Failure Scenarios': {
+      question: `A service involving ${topic.name} fails only when crossing one network boundary. What should be isolated first?`,
+      options: [
+        `The dependency at that boundary, such as ${ctx.boundaryDependencies}`,
+        'Every endpoint application at every site',
+        'Only the user password policy',
+        'The documentation template',
+      ],
+      explanation: 'Boundary-specific failures point to the dependency at that boundary.',
+    },
+    'Design Tradeoffs': {
+      question: `A simpler ${topic.name} design is easier to support, but a segmented design reduces blast radius. What is the best decision factor?`,
+      options: [
+        `Risk to ${ctx.affectedUsers}, support skill, scale, performance, and security requirements`,
+        'Whichever option has fewer diagrams',
+        'Always choose the most complex design',
+        'Always choose the fewest controls',
+      ],
+      explanation: 'Tradeoff questions require balancing operational simplicity with security, scale, and resilience.',
+    },
+    'Operational Handoff': {
+      question: `A different technician will support ${topic.name} tomorrow. What should the handoff emphasize?`,
+      options: [
+        `Expected behavior, dependencies, monitoring signals, known risks, and escalation path for ${ctx.validationTarget}`,
+        'Only the name of the person who made the change',
+        'A statement that no one else should touch it',
+        'A list of unrelated devices in the building',
+      ],
+      explanation: 'A useful handoff tells the next person how to operate, verify, and escalate the system.',
+    },
+    'Review Scenario': {
+      question: `A user can reach local resources but not a remote service related to ${topic.name}. Which answer shows the best combined reasoning?`,
+      options: [
+        `Confirm ${ctx.reviewPath} in a logical order`,
+        'Assume the remote service is down without testing',
+        'Reinstall the local operating system first',
+        'Ignore local success because it is not useful evidence',
+      ],
+      explanation: 'Integrated scenarios require using what still works to narrow what does not.',
+    },
+  };
+
+  return prompts[theme.title] || prompts['Troubleshooting Workflow'];
+}
+
+function indefiniteArticle(text) {
+  return /^[aeiou]/i.test(text) ? 'an' : 'a';
+}
+
+function topicPromptContext(topic) {
+  const defaults = {
+    ticket: 'connectivity',
+    affectedUsers: 'the affected users',
+    securityGoal: 'segmentation and access control',
+    configItem: 'the affected path settings',
+    scope: 'one subnet',
+    boundary: 'a specific network boundary',
+    validationTarget: 'the affected user workflow',
+    lowRiskCheck: 'verification step',
+    planningNeed: 'Expected users and required services',
+    symptom: 'the reported symptom',
+    misconfigExamples: 'gateway, tag, mask, rule, or profile assignment',
+    securityExposure: 'management access',
+    performanceMetric: 'latency, errors, utilization, or throughput',
+    toolExamples: 'ping, traceroute, DNS lookup, logs, or packet capture',
+    boundaryDependencies: 'route, policy, tag, address, or translation',
+    reviewPath: 'local configuration, gateway/path, name resolution, policy, and service availability',
+  };
+
+  const contexts = {
+    osi: { ticket: 'layered troubleshooting', configItem: 'the failing OSI layer evidence', scope: 'one communication layer', boundary: 'a layer-specific failure pattern', validationTarget: 'end-to-end communication', symptom: 'the layer-specific symptom', misconfigExamples: 'cabling, MAC forwarding, IP route, port, or application setting', toolExamples: 'link checks, ARP/MAC tables, ping, traceroute, or application logs', boundaryDependencies: 'physical link, VLAN, route, port, or application dependency' },
+    tcpip: { ticket: 'protocol stack', configItem: 'IP, gateway, DNS, and transport settings', scope: 'one protocol layer', boundary: 'a TCP/IP layer boundary', validationTarget: 'application reachability over the expected protocol', symptom: 'the stack behavior', misconfigExamples: 'IP address, mask, gateway, DNS server, or port', toolExamples: 'ipconfig/ifconfig, ping, traceroute, netstat, or DNS lookup', boundaryDependencies: 'addressing, routing, transport port, or application service' },
+    ports: { ticket: 'service reachability', configItem: 'service port, protocol, and firewall rule', scope: 'one application service', boundary: 'a blocked service or port boundary', validationTarget: 'the expected service port from the client', symptom: 'the failed service connection', misconfigExamples: 'wrong port, blocked ACL, stopped service, or TCP/UDP mismatch', toolExamples: 'netstat, ss, telnet/nc, packet capture, or firewall logs', boundaryDependencies: 'port, protocol, ACL, NAT, or service listener' },
+    subnetting: { ticket: 'IP addressing', configItem: 'IP address, subnet mask, gateway, and overlap', scope: 'one IP range', boundary: 'a subnet boundary', validationTarget: 'host-to-gateway and host-to-host reachability', symptom: 'the addressing symptom', misconfigExamples: 'mask, gateway, duplicate IP, overlap, or wrong network ID', toolExamples: 'ipconfig/ifconfig, ping gateway, ARP table, route table, or subnet calculation', boundaryDependencies: 'mask, gateway, route, broadcast domain, or address overlap' },
+    vlans: { ticket: 'segmentation', affectedUsers: 'users in the affected VLAN', securityGoal: 'VLAN isolation', configItem: 'access VLAN, trunk allowed list, and native VLAN', scope: 'one VLAN', boundary: 'a VLAN or trunk boundary', validationTarget: 'traffic inside and across the affected VLAN', symptom: 'the VLAN reachability symptom', misconfigExamples: 'access VLAN, native VLAN, trunk allowed list, or missing SVI', toolExamples: 'show vlan, show interfaces trunk, MAC table, ping gateway, or switch logs', boundaryDependencies: 'access port, trunk tag, native VLAN, SVI, or inter-VLAN route' },
+    routing: { ticket: 'path selection', configItem: 'route table, next hop, metric, and default route', scope: 'one destination network', boundary: 'a routing boundary', validationTarget: 'reachability across the expected next hop', symptom: 'the path failure symptom', misconfigExamples: 'missing route, wrong next hop, bad metric, or default route issue', toolExamples: 'route table, traceroute, ping next hop, routing protocol neighbors, or logs', boundaryDependencies: 'route, next hop, metric, adjacency, or ACL' },
+    switching: { ticket: 'Layer 2 forwarding', configItem: 'MAC table, STP state, duplex, and port configuration', scope: 'one switch segment', boundary: 'a Layer 2 forwarding boundary', validationTarget: 'local switching and gateway reachability', symptom: 'the Layer 2 symptom', misconfigExamples: 'disabled port, VLAN mismatch, STP block, duplex mismatch, or MAC learning issue', toolExamples: 'MAC table, interface status, STP state, counters, or switch logs', boundaryDependencies: 'port state, VLAN assignment, STP, duplex, or MAC learning' },
+    wireless: { ticket: 'Wi-Fi access', configItem: 'SSID, band, channel, authentication, and coverage', scope: 'one SSID or coverage area', boundary: 'an RF or authentication boundary', validationTarget: 'client association and access through the SSID', symptom: 'the wireless symptom', misconfigExamples: 'wrong PSK, channel overlap, weak signal, disabled SSID, or VLAN mapping', toolExamples: 'signal survey, controller logs, client association state, ping, or channel analysis', boundaryDependencies: 'SSID, authentication, RF channel, signal, or VLAN mapping' },
+    monitoring: { ticket: 'alerting and baselines', configItem: 'thresholds, baseline, polling interval, and alert target', scope: 'one monitored service', boundary: 'a monitoring threshold or collection boundary', validationTarget: 'alert behavior and metric collection', symptom: 'the monitoring symptom', misconfigExamples: 'wrong threshold, missing baseline, disabled poller, or bad alert route', toolExamples: 'monitoring graphs, SNMP poll results, syslog, interface counters, or alerts', boundaryDependencies: 'baseline, threshold, poller, metric, or alert path' },
+    logs: { ticket: 'event correlation', configItem: 'syslog target, severity, timestamps, and retention', scope: 'one device or event source', boundary: 'a log collection boundary', validationTarget: 'timestamped event flow into the log system', symptom: 'the missing log symptom', misconfigExamples: 'wrong syslog server, severity filter, time skew, or retention issue', toolExamples: 'syslog viewer, device logs, NTP check, severity filters, or SIEM search', boundaryDependencies: 'time sync, log target, severity, transport, or retention' },
+    snmp: { ticket: 'device polling', configItem: 'SNMP version, credentials, ACLs, OIDs, and trap target', scope: 'one monitored device', boundary: 'an SNMP polling or trap boundary', validationTarget: 'successful polling and trap delivery', symptom: 'the SNMP collection symptom', misconfigExamples: 'community string, SNMPv3 credentials, ACL, OID, or trap destination', toolExamples: 'snmpwalk, NMS poll results, device ACLs, traps, or logs', boundaryDependencies: 'SNMP credentials, ACL, UDP 161/162, OID, or NMS reachability' },
+    backups: { ticket: 'continuity', configItem: 'backup schedule, restore point, retention, and restore test', scope: 'one protected system', boundary: 'a backup or restore boundary', validationTarget: 'successful restore of required data', symptom: 'the recovery symptom', misconfigExamples: 'missed schedule, bad retention, failed job, or untested restore', toolExamples: 'backup job logs, restore test, storage usage, checksums, or RPO/RTO review', boundaryDependencies: 'backup job, repository, retention, restore permissions, or RPO/RTO' },
+    firewalls: { ticket: 'policy enforcement', configItem: 'source, destination, service, action, and rule order', scope: 'one traffic flow', boundary: 'a firewall policy boundary', validationTarget: 'allowed traffic and blocked traffic as designed', symptom: 'the blocked or over-permitted flow', misconfigExamples: 'wrong source, destination, service, action, NAT, or rule order', toolExamples: 'firewall logs, packet capture, rule hit count, traceroute, or policy test', boundaryDependencies: 'rule order, service object, NAT, zone, or implicit deny' },
+    encryption: { ticket: 'secure communication', configItem: 'certificate, cipher, key, trust chain, and expiration', scope: 'one encrypted session', boundary: 'a trust or cipher boundary', validationTarget: 'trusted encrypted session establishment', symptom: 'the certificate or handshake symptom', misconfigExamples: 'expired certificate, wrong SAN, weak cipher, bad trust chain, or key mismatch', toolExamples: 'certificate viewer, openssl, TLS logs, packet capture, or CA validation', boundaryDependencies: 'certificate, CA trust, cipher suite, private key, or protocol version' },
+    vpns: { ticket: 'remote connectivity', configItem: 'tunnel mode, routes, authentication, proposals, and split tunnel policy', scope: 'one VPN tunnel or user group', boundary: 'a VPN tunnel boundary', validationTarget: 'traffic through the tunnel to required resources', symptom: 'the tunnel or remote access symptom', misconfigExamples: 'proposal mismatch, missing route, authentication failure, split tunnel, or NAT-T issue', toolExamples: 'VPN logs, tunnel status, route table, ping through tunnel, or packet capture', boundaryDependencies: 'IKE/IPsec proposal, route, authentication, NAT-T, or ACL' },
+    accesscontrol: { ticket: 'authorization', configItem: 'identity, role, policy, group, and accounting record', scope: 'one user role or resource', boundary: 'an authentication or authorization boundary', validationTarget: 'the correct user role accessing the correct resource', symptom: 'the access denial or over-permission symptom', misconfigExamples: 'wrong group, stale role, bad policy order, MFA issue, or missing accounting', toolExamples: 'AAA logs, directory group check, policy simulator, RADIUS/TACACS+ logs, or access report', boundaryDependencies: 'identity, role, policy, group membership, or AAA server' },
+    commonissues: { ticket: 'connectivity failure', configItem: 'addressing, link, DNS, gateway, and wireless state', scope: 'one affected client or area', boundary: 'a client, subnet, or service boundary', validationTarget: 'basic connectivity and required service access', symptom: 'the reported connectivity symptom', misconfigExamples: 'APIPA, wrong gateway, DNS failure, weak signal, or bad cable', toolExamples: 'ipconfig, ping, DNS lookup, cable test, Wi-Fi signal check, or logs', boundaryDependencies: 'link, address, gateway, DNS, RF, or service state' },
+    tools: { ticket: 'diagnostic evidence', configItem: 'tool output, target, path, and test result', scope: 'one tested path or service', boundary: 'a diagnostic boundary', validationTarget: 'the condition the selected tool is meant to prove', symptom: 'the observed tool output', misconfigExamples: 'wrong target, wrong interface, stale DNS cache, blocked ICMP, or misleading path test', toolExamples: 'ping, traceroute, nslookup/dig, netstat/ss, tcpdump/Wireshark, or cable tester', boundaryDependencies: 'reachability, path, name resolution, listening port, packet flow, or cabling' },
+    diagnosis: { ticket: 'root cause analysis', configItem: 'symptoms, scope, theory, test result, and fix validation', scope: 'one failure domain', boundary: 'a troubleshooting decision point', validationTarget: 'the confirmed root cause and restored service', symptom: 'the collected symptom set', misconfigExamples: 'untested theory, wrong scope, skipped validation, or undocumented change', toolExamples: 'layered checks, ping, traceroute, logs, packet capture, or recent change review', boundaryDependencies: 'scope, evidence, theory, test, fix, or documentation' },
+    escalation: { ticket: 'handoff and change', configItem: 'ticket notes, SLA, owner, approval, rollback, and impact', scope: 'one escalated incident or change', boundary: 'an ownership or approval boundary', validationTarget: 'handoff quality and approved change outcome', symptom: 'the escalation trigger', misconfigExamples: 'missing impact, no rollback, unclear owner, SLA miss, or poor notes', toolExamples: 'ticket history, SLA report, change record, monitoring evidence, or validation checklist', boundaryDependencies: 'ownership, approval, SLA, rollback plan, or communication path' },
+  };
+
+  return { ...defaults, ...(contexts[topic.id] || {}) };
 }
 
 function makeExpansionQuestion(topic, index) {
